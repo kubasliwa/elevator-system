@@ -1,5 +1,6 @@
 package com.system;
 
+import com.system.activities.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -22,7 +23,7 @@ class Elevator {
     private ElevatorState state;
     private final Set<Integer> deliveryDestinationFloors;
     private final Set<PickupRequest> pickupRequestsToHandle;
-//    private final List<ElevatorActivity> activityLogs;
+    private final Map<Integer, List<ElevatorActivity>> activityLogsMap;
 
     protected static final Logger logger = LogManager.getLogger();
 
@@ -37,15 +38,17 @@ class Elevator {
         this.state = ElevatorState.IDLE;
         this.deliveryDestinationFloors = new HashSet<>();
         this.pickupRequestsToHandle = new HashSet<>();
-//        this.activityLogs = new LinkedList<>();
+        this.activityLogsMap = new HashMap<>();
     }
 
     public void addPickupRequest(PickupRequest request) {
         pickupRequestsToHandle.add(request);
+        logElevatorActivity(new AddPickupRequestActivity(state, request.getFloor()));
     }
 
     public void clearPickupRequests() {
         pickupRequestsToHandle.clear();
+        logElevatorActivity(new ClearPickupRequestsActivity(state));
     }
 
     public void addDeliveryDestinationFloorList(List<Integer> destinationFloors) {
@@ -56,6 +59,16 @@ class Elevator {
         deliveryDestinationFloors.remove(floor);
     }
 
+    private void logElevatorActivity(ElevatorActivity activity) {
+        if (activityLogsMap.containsKey(ElevatorSystem.getCurrentStep())) {
+            List<ElevatorActivity> currentActivityList = new ArrayList<>(activityLogsMap.get(ElevatorSystem.getCurrentStep()));
+            currentActivityList.add(activity);
+            activityLogsMap.put(ElevatorSystem.getCurrentStep(), currentActivityList);
+        } else {
+            activityLogsMap.put(ElevatorSystem.getCurrentStep(), List.of(activity));
+        }
+    }
+
     // sprawdza jaki jest stan windy i zmienia jej piętro
     private void moveElevator() {
         switch (state) {
@@ -64,12 +77,14 @@ class Elevator {
                     logger.error("Elevator cannot go up anymore.");
                 }
                 currentFloor++;
+                logElevatorActivity(new MoveActivity(state, currentFloor - 1, currentFloor));
             }
             case DOWN -> {
                 if (currentFloor == 0) {
                     logger.error("Elevator cannot go below ground level.");
                 }
                 currentFloor--;
+                logElevatorActivity(new MoveActivity(state, currentFloor + 1, currentFloor));
             }
         }
     }
@@ -79,6 +94,7 @@ class Elevator {
             logger.warn("Elevator is trying to open the door that were already opened.");
         }
         isDoorClosed = false;
+        logElevatorActivity(new DoorOpenedActivity(state, currentFloor));
     }
 
     public void closeDoor() {
@@ -86,6 +102,7 @@ class Elevator {
             logger.warn("Elevator's door is already closed - trying to close them once again.");
         }
         isDoorClosed = true;
+        logElevatorActivity(new DoorClosedActivity(state, currentFloor, stepsSinceDoorOpened));
         stepsSinceDoorOpened = 0;
     }
 
@@ -98,6 +115,7 @@ class Elevator {
         deliveryDestinationFloors.clear();
         pickupRequestsToHandle.clear();
         state = ElevatorState.IDLE;
+        logElevatorActivity(new ElevatorBrokenActivity(state));
     }
 
     private void updateState() {
@@ -212,8 +230,7 @@ class Elevator {
                     .filter(x -> x > currentFloor && x < request.getFloor())
                     .count();
             long pickupsSameDirectionBetween = pickupRequestsToHandle.stream()
-                    .map(PickupRequest::getFloor)
-                    .filter(x -> x > currentFloor && x < request.getFloor())
+                    .filter(x -> x.getFloor() > currentFloor && x.getFloor() < request.getFloor() && x.getDirection() == RequestDirection.UP)
                     .count();
             int result = (int) (deliveriesBetween * estimatedLeavingSteps +
                     pickupsSameDirectionBetween * estimatedEnteringSteps + distanceBetweenFloors);
@@ -230,8 +247,7 @@ class Elevator {
                     .filter(x -> x < currentFloor && x > request.getFloor())
                     .count();
             long pickupsSameDirectionBetween = pickupRequestsToHandle.stream()
-                    .map(PickupRequest::getFloor)
-                    .filter(x -> x < currentFloor && x > request.getFloor())
+                    .filter(x -> x.getFloor() < currentFloor && x.getFloor() > request.getFloor() && x.getDirection() == RequestDirection.DOWN)
                     .count();
             int result = (int) (deliveriesBetween * estimatedLeavingSteps +
                     pickupsSameDirectionBetween * estimatedEnteringSteps + distanceBetweenFloors);
@@ -279,6 +295,10 @@ class Elevator {
                             (x.getDirection() == RequestDirection.DOWN && x.getFloor() > request.getFloor()))
                     .count();
 
+            if (pessimisticPickup) {
+                deliveriesUntilMaxFloor++;
+            }
+
             int result = (int) (deliveriesUntilMaxFloor * estimatedLeavingSteps +
                     pickupsUntilMaxFloorAndRequestFloor * estimatedEnteringSteps +
                     Math.abs(currentFloor - maxFloorToTravel) + Math.abs(request.getFloor() - maxFloorToTravel));
@@ -325,6 +345,10 @@ class Elevator {
                     .filter(x -> x.getDirection() == RequestDirection.DOWN ||
                             (x.getDirection() == RequestDirection.UP && x.getFloor() < request.getFloor()))
                     .count();
+
+            if (pessimisticPickup) {
+                deliveriesUntilMinFloor++;
+            }
 
             int result = (int) (deliveriesUntilMinFloor * estimatedLeavingSteps +
                     pickupsUntilMinFloorAndRequestFloor * estimatedEnteringSteps +

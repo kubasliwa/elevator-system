@@ -1,5 +1,5 @@
 package com.system;
 
-enum ElevatorState {
+public enum ElevatorState {
     UP, DOWN, IDLE
 }

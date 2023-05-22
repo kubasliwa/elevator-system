@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 
 public class ElevatorSystem {
 
+    private static int currentStep = 0;
     private final int numberOfElevators;
     private final int numberOfFloors;
     private final int criticalStepsSinceElevatorDoorOpened;
@@ -30,6 +31,14 @@ public class ElevatorSystem {
         for (int i = 0; i < numberOfElevators; i++) {
             elevators[i] = new Elevator(i, elevatorStartingFloors[i], estimatedEnteringSteps, estimatedLeavingSteps, numberOfFloors);
         }
+    }
+
+    private static void incrementCurrentStep() {
+        currentStep++;
+    }
+
+    public static int getCurrentStep() {
+        return currentStep;
     }
 
     private void assignPickupRequests() {
@@ -194,8 +203,8 @@ public class ElevatorSystem {
         assignPickupRequests();
         invokeElevatorsSteps();
         checkForBrokenElevators();
-        createDoorClosers();
         invokeDoorClosersStepsAndRemoveUnnecessary();
+        createDoorClosers();
         updateDeliveriesBasedOnDonePickups();
         removeSuccessfulDeliveries();
         removeDonePickups();
