@@ -69,7 +69,7 @@ class Elevator {
         }
     }
 
-    // sprawdza jaki jest stan windy i zmienia jej piętro
+    // checks elevator state and performs elevator movement
     private void moveElevator() {
         switch (state) {
             case UP -> {
@@ -106,7 +106,7 @@ class Elevator {
         stepsSinceDoorOpened = 0;
     }
 
-    // winda jest zepsuta, jeśli jej drzwi są zbyt długo otwarte
+    // elevator is said to be broken, when door is open for too long (above user-specified threshold)
     public boolean isBroken(int criticalStepsSinceElevatorDoorOpened) {
         return stepsSinceDoorOpened > criticalStepsSinceElevatorDoorOpened;
     }
@@ -118,6 +118,7 @@ class Elevator {
         logElevatorActivity(new ElevatorBrokenActivity(state));
     }
 
+    // updates elevator state based on actions that elevator still needs to perform
     private void updateState() {
         if (deliveryDestinationFloors.isEmpty() && pickupRequestsToHandle.isEmpty()) {
             state = ElevatorState.IDLE;
@@ -160,6 +161,7 @@ class Elevator {
         }
     }
 
+    // performs actions required for current floor based on elevator's state
     private void handleFloor() {
         if (state == ElevatorState.IDLE) {
             return;
@@ -201,10 +203,8 @@ class Elevator {
         }
     }
 
+    // updates elevator's state, if door is closed performs movement, handles floor and updates state once again
     public void step() {
-        // okreslenie stanu
-        // sprawdza czy drzwi zamknięte, zmiany piętra, sprawdza czy należy otworzyć dzrwi
-        // jeżeli drzwi otwarte, to czeka
         updateState();
         if (isDoorClosed) {
             moveElevator();
@@ -215,8 +215,8 @@ class Elevator {
         updateState();
     }
 
+    // given all actions elevator needs to perform, estimates the time elevator needs to pick up given request
     public int estimateNumberOfStepsUntilPickup(PickupRequest request) {
-        // wywoływana przez ElevatorSystem, podaje najgorszy czas dojazdu dla danego pickupa (jeżeli jest już jakiś request)
         int estimatedStepsToMoveIfDoorOpen = Math.max((Math.max(estimatedEnteringSteps, estimatedLeavingSteps) - stepsSinceDoorOpened), 0);
         int distanceBetweenFloors = Math.abs(currentFloor - request.getFloor());
 
@@ -224,7 +224,7 @@ class Elevator {
             return distanceBetweenFloors;
         }
 
-        // (1) winda w górę, pickup w górę, currentFloor < requestFloor --
+        // (1) elevator up, request up, currentFloor < requestFloor
         if (state == ElevatorState.UP && request.getDirection() == RequestDirection.UP && request.getFloor() > currentFloor) {
             long deliveriesBetween = deliveryDestinationFloors.stream()
                     .filter(x -> x > currentFloor && x < request.getFloor())
@@ -241,7 +241,7 @@ class Elevator {
             }
         }
 
-        // (2) winda w dół, pickup w dół, currentFloor > requestFloor --
+        // (2) elevator down, request down, currentFloor > requestFloor
         if (state == ElevatorState.DOWN && request.getDirection() == RequestDirection.DOWN && request.getFloor() < currentFloor) {
             long deliveriesBetween = deliveryDestinationFloors.stream()
                     .filter(x -> x < currentFloor && x > request.getFloor())
@@ -258,7 +258,7 @@ class Elevator {
             }
         }
 
-        // (3) winda w górę, pickup w dół, currentFloor < requestFloor
+        // (3) elevator up, request down, currentFloor < requestFloor
         if (state == ElevatorState.UP && request.getDirection() == RequestDirection.DOWN && request.getFloor() > currentFloor) {
             boolean pessimisticPickup = pickupRequestsToHandle.stream()
                     .anyMatch(x -> x.getFloor() > currentFloor && x.getDirection() == RequestDirection.UP);
@@ -309,7 +309,7 @@ class Elevator {
             }
         }
 
-        // (4) winda w dół, pickup w górę, currentFloor > requestFloor
+        // (4) elevator down, request up, currentFloor > requestFloor
         if (state == ElevatorState.DOWN && request.getDirection() == RequestDirection.UP && currentFloor > request.getFloor()) {
             boolean pessimisticPickup = pickupRequestsToHandle.stream()
                     .anyMatch(x -> x.getFloor() < currentFloor && x.getDirection() == RequestDirection.DOWN);
@@ -360,7 +360,7 @@ class Elevator {
             }
         }
 
-        // (5) winda w górę, pickup w górę, currentFloor > requestFloor --
+        // (5) elevator up, request up, currentFloor > requestFloor
         if (state == ElevatorState.UP && request.getDirection() == RequestDirection.UP && currentFloor > request.getFloor()) {
             boolean pessimisticPickupUp = pickupRequestsToHandle.stream()
                     .anyMatch(x -> x.getFloor() > currentFloor && x.getDirection() == RequestDirection.UP);
@@ -439,7 +439,7 @@ class Elevator {
             }
         }
 
-        // (6) winda w dół, pickup w dół, currentFloor < requestFloor --
+        // (6) elevator down, request down, currentFloor < requestFloor
         if (state == ElevatorState.DOWN && request.getDirection() == RequestDirection.DOWN && currentFloor < request.getFloor()) {
             boolean pessimisticPickupDown = pickupRequestsToHandle.stream()
                     .anyMatch(x -> x.getFloor() < currentFloor && x.getDirection() == RequestDirection.DOWN);
@@ -518,7 +518,7 @@ class Elevator {
             }
         }
 
-        // (7) winda w górę, pickup w dół, currentFloor >= requestFloor ++
+        // (7) elevator up, request down, currentFloor >= requestFloor
         if (state == ElevatorState.UP && request.getDirection() == RequestDirection.DOWN/* && currentFloor >= request.getFloor()*/) {
             boolean pessimisticPickup = pickupRequestsToHandle.stream()
                     .anyMatch(x -> x.getFloor() > currentFloor && x.getDirection() == RequestDirection.UP);
@@ -569,7 +569,7 @@ class Elevator {
             }
         }
 
-        // (8) winda w dół, pickup w górę, currentFloor <= requestFloor ++
+        // (8) elevator down, request up, currentFloor <= requestFloor
         if (state == ElevatorState.DOWN && request.getDirection() == RequestDirection.UP/* && currentFloor <= request.getFloor()*/) {
             boolean pessimisticPickup = pickupRequestsToHandle.stream()
                     .anyMatch(x -> x.getFloor() < currentFloor && x.getDirection() == RequestDirection.DOWN);

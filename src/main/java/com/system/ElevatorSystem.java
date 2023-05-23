@@ -41,12 +41,12 @@ public class ElevatorSystem {
         return currentStep;
     }
 
+    // assigns pickup requests to elevators in an optimal way
+    // first, it clears all the request that have not already been picked
+    // then, for each pickup request it collects an estimated time of arrival for every elevator
+    // then, it searches for a minimum time in matrix, assigns the elevator to this request, updates all the estimated arrival times for this elevator
+    // repeat above steps until all pickup requests are assigned
     private void assignPickupRequests() {
-        // tworzy optymalne rozdanie pickupów do wind
-        // czyści wszystkie obecnie przyporządkowane pickupy
-        // najpierw dla każdego pickupa zbiera estymowany czas dotarcia każdej windy
-        // następnie szuka minimum czasu w macierzy, przyporządkowuje temu requestowi tę windę, uaktualnia wszystkie czasy dla tej windy
-        // robi to, aż wszystkie requesty nie zostaną przyporządkowane do wind
         int[][] estimatedStepsMatrix = new int[requests.size()][numberOfElevators];
         for (int i = 0; i < estimatedStepsMatrix.length; i++) {
             for (int j = 0; j < estimatedStepsMatrix[0].length; j++) {
@@ -103,9 +103,9 @@ public class ElevatorSystem {
         return new int[] {row, column};
     }
 
+    // for every elevator that opened door in this step, creates a doorCloser which is responsible for closing
+    // elevator's door after a given number of steps
     private void createDoorClosers() {
-        // dla każdej windy, która otwarła drzwi w tym stepie tworzy doorClosera
-        // z odpowiednią liczbą stepów do zamknięcia
         for (int i = 0; i < elevators.length; i++) {
             Elevator currentElevator = elevators[i];
             if (currentElevator.isDoorClosed() || currentElevator.getStepsSinceDoorOpened() != 0) {
@@ -128,6 +128,7 @@ public class ElevatorSystem {
         }
     }
 
+    // invokes doorClosers' steps and removes the one that have already closed their elevator's door
     private void invokeDoorClosersStepsAndRemoveUnnecessary() {
         Iterator<ElevatorDoorCloser> iterator = doorClosers.iterator();
         while (iterator.hasNext()) {
@@ -182,23 +183,25 @@ public class ElevatorSystem {
         }
     }
 
+    // creates a pickup request (somebody clicks on a button at some floor)
     public void pickup(PickupRequest request) {
         requests.add(request);
     }
 
+    // returns current state of all elevators
     public Elevator[] status() {
         return elevators;
     }
 
+    // performs a step in our simulation
+    // (1) pickup requests are assigned to optimal elevators
+    // (2) elevators' steps are invoked
+    // (3) checks if any elevator is broken. if so - notify them
+    // (4) invokes doorCloser steps, removes done doorClosers
+    // (5) creates doorClosers where necessary
+    // (6) updates deliveries (buttons inside elevators) base on pickup requests
+    // (7) removes successful deliveries and done pickup requests
     public void step() {
-        // najpierw rozdanie pickupów do wind (w każdym stepie na nowo)
-        // wywołanie stepów wszystkich wind
-        // sprawdzenie, czy windy nie są zepsute
-        // stworzenie door closerów tam, gdzie windy właśnie otwarły drzwi
-        // wywołanie stepów na wszystkich door closerach i usuniecie niepotrzebnych
-        // uaktualnia sety pięter windom na podstawie przyporządkowanych requestów
-        // usunięcie spełnionych deliveries
-        // usuwa przetworzone requesty
         clearElevatorPickupRequests();
         assignPickupRequests();
         invokeElevatorsSteps();
