@@ -409,8 +409,7 @@ class Elevator {
                 } else if (minPickupFloor.isPresent()) {
                     minFloorToTravel = minPickupFloor.get();
                 } else {
-                    minFloorToTravel = Integer.MAX_VALUE;
-                    logger.error("Elevator is in state DOWN, which is incorrect.");
+                    minFloorToTravel = request.getFloor();
                 }
             }
 
@@ -425,6 +424,14 @@ class Elevator {
             int result = (int) (deliveriesBetweenMinAndMax * estimatedLeavingSteps +
                     pickupsBetweenCurrentMaxMinAndRequest * estimatedEnteringSteps +
                     Math.abs(currentFloor - maxFloorToTravel) + Math.abs(maxFloorToTravel - minFloorToTravel) + Math.abs(request.getFloor() - minFloorToTravel));
+
+            if (pessimisticPickupUp) {
+                result += estimatedLeavingSteps;
+            }
+            if (pessimisticPickupDown) {
+                result += estimatedLeavingSteps;
+            }
+
             if (!isDoorClosed) {
                 return result + estimatedStepsToMoveIfDoorOpen;
             } else {
@@ -481,8 +488,7 @@ class Elevator {
                 } else if (maxPickupFloor.isPresent()) {
                     maxFloorToTravel = maxPickupFloor.get();
                 } else {
-                    maxFloorToTravel = -1;
-                    logger.error("Elevator is in state UP, which is incorrect.");
+                    maxFloorToTravel = request.getFloor();
                 }
             }
 
@@ -497,6 +503,14 @@ class Elevator {
             int result = (int) (deliveriesBetweenMinAndMax * estimatedLeavingSteps +
                     pickupsBetweenCurrentMinMaxAndRequest * estimatedEnteringSteps +
                     Math.abs(currentFloor - minFloorToTravel) + Math.abs(maxFloorToTravel - minFloorToTravel) + Math.abs(request.getFloor() - maxFloorToTravel));
+
+            if (pessimisticPickupDown) {
+                result += estimatedLeavingSteps;
+            }
+            if (pessimisticPickupUp) {
+                result += estimatedLeavingSteps;
+            }
+
             if (!isDoorClosed) {
                 return result + estimatedStepsToMoveIfDoorOpen;
             } else {
@@ -543,6 +557,11 @@ class Elevator {
             int result = (int) (deliveriesBetweenCurrentMaxAndRequestFloor * estimatedLeavingSteps +
                     pickupsUntilMaxFloorAndRequestFloor * estimatedEnteringSteps +
                     Math.abs(currentFloor - maxFloorToTravel) + Math.abs(maxFloorToTravel - request.getFloor()));
+
+            if (pessimisticPickup) {
+                result += estimatedLeavingSteps;
+            }
+
             if (!isDoorClosed) {
                 return result + estimatedStepsToMoveIfDoorOpen;
             } else {
@@ -589,6 +608,11 @@ class Elevator {
             int result = (int) (deliveriesBetweenCurrentMinAndRequestFloor * estimatedLeavingSteps +
                     pickupsUntilMinFloorAndRequestFloor * estimatedEnteringSteps +
                     Math.abs(currentFloor - minFloorToTravel) + Math.abs(minFloorToTravel - request.getFloor()));
+
+            if (pessimisticPickup) {
+                result += estimatedLeavingSteps;
+            }
+
             if (!isDoorClosed) {
                 return result + estimatedStepsToMoveIfDoorOpen;
             } else {
@@ -605,6 +629,4 @@ class Elevator {
         logger.error("Failed pickup time estimation.");
         return Integer.MAX_VALUE;
     }
-
-
 }
