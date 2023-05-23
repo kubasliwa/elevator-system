@@ -37,6 +37,10 @@ public class ElevatorSystem {
         currentStep++;
     }
 
+    public static void setCurrentStepToZeroForTesting() {
+        currentStep = 0;
+    }
+
     public static int getCurrentStep() {
         return currentStep;
     }
@@ -202,6 +206,7 @@ public class ElevatorSystem {
     // (6) updates deliveries (buttons inside elevators) base on pickup requests
     // (7) removes successful deliveries and done pickup requests
     public void step() {
+        incrementCurrentStep();
         clearElevatorPickupRequests();
         assignPickupRequests();
         invokeElevatorsSteps();

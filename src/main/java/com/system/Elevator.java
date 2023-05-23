@@ -14,8 +14,11 @@ import org.apache.logging.log4j.Logger;
 class Elevator {
 
     private final int id;
+    @ToString.Exclude
     private final int estimatedEnteringSteps;
+    @ToString.Exclude
     private final int estimatedLeavingSteps;
+    @ToString.Exclude
     private final int numberOfFloors;
     private int stepsSinceDoorOpened;
     private int currentFloor;
@@ -23,6 +26,7 @@ class Elevator {
     private ElevatorState state;
     private final Set<Integer> deliveryDestinationFloors;
     private final Set<PickupRequest> pickupRequestsToHandle;
+    @ToString.Exclude
     private final Map<Integer, List<ElevatorActivity>> activityLogsMap;
 
     protected static final Logger logger = LogManager.getLogger();
@@ -281,8 +285,7 @@ class Elevator {
                 } else if (maxPickupFloor.isPresent()) {
                     maxFloorToTravel = maxPickupFloor.get();
                 } else {
-                    maxFloorToTravel = -1;
-                    logger.error("Elevator is in state UP, which is incorrect.");
+                    maxFloorToTravel = request.getFloor();
                 }
             }
 
@@ -332,8 +335,7 @@ class Elevator {
                 } else if (minPickupFloor.isPresent()) {
                     minFloorToTravel = minPickupFloor.get();
                 } else {
-                    minFloorToTravel = Integer.MAX_VALUE;
-                    logger.error("Elevator is in state DOWN, which is incorrect.");
+                    minFloorToTravel = request.getFloor();
                 }
             }
 
@@ -383,8 +385,7 @@ class Elevator {
                 } else if (maxPickupFloor.isPresent()) {
                     maxFloorToTravel = maxPickupFloor.get();
                 } else {
-                    maxFloorToTravel = -1;
-                    logger.error("Elevator is in state UP, which is incorrect.");
+                    maxFloorToTravel = request.getFloor();
                 }
             }
 
@@ -462,8 +463,7 @@ class Elevator {
                 } else if (minPickupFloor.isPresent()) {
                     minFloorToTravel = minPickupFloor.get();
                 } else {
-                    minFloorToTravel = Integer.MAX_VALUE;
-                    logger.error("Elevator is in state DOWN, which is incorrect.");
+                    minFloorToTravel = request.getFloor();
                 }
             }
 
@@ -541,8 +541,7 @@ class Elevator {
                 } else if (maxPickupFloor.isPresent()) {
                     maxFloorToTravel = maxPickupFloor.get();
                 } else {
-                    maxFloorToTravel = -1;
-                    logger.error("Elevator is in state UP, which is incorrect.");
+                    maxFloorToTravel = request.getFloor();
                 }
             }
 
@@ -592,8 +591,7 @@ class Elevator {
                 } else if (minPickupFloor.isPresent()) {
                     minFloorToTravel = minPickupFloor.get();
                 } else {
-                    minFloorToTravel = Integer.MAX_VALUE;
-                    logger.error("Elevator is in state DOWN, which is incorrect.");
+                    minFloorToTravel = request.getFloor();
                 }
             }
 
